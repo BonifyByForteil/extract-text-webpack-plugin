@@ -55,26 +55,6 @@ class ExtractTextPlugin {
     return ExtractTextPlugin.loader(mergeOptions({ id: this.id }, options));
   }
 
-  mergeNonInitialChunks(chunk, intoChunk, checkedChunks) {
-    if (!intoChunk) {
-      checkedChunks = [];
-      chunk.chunks.forEach((c) => {
-        if (isInitialOrHasNoParents(c)) return;
-        this.mergeNonInitialChunks(c, chunk, checkedChunks);
-      }, this);
-    } else if (checkedChunks.indexOf(chunk) < 0) {
-      checkedChunks.push(chunk);
-      chunk.forEachModule((module) => {
-        intoChunk.addModule(module);
-        module.addChunk(intoChunk);
-      });
-      chunk.chunks.forEach((c) => {
-        if (isInitialOrHasNoParents(c)) return;
-        this.mergeNonInitialChunks(c, intoChunk, checkedChunks);
-      }, this);
-    }
-  }
-
   renderExtractedChunk(chunk) {
     const source = new ConcatSource();
     chunk.forEachModule((module) => {
@@ -177,16 +157,6 @@ class ExtractTextPlugin {
           });
         }, (err) => {
           if (err) return callback(err);
-          extractedChunks.forEach((extractedChunk) => {
-            if (isInitialOrHasNoParents(extractedChunk)) { this.mergeNonInitialChunks(extractedChunk); }
-          }, this);
-          extractedChunks.forEach((extractedChunk) => {
-            if (!isInitialOrHasNoParents(extractedChunk)) {
-              extractedChunk.forEachModule((module) => {
-                extractedChunk.removeModule(module);
-              });
-            }
-          });
           compilation.applyPlugins('optimize-extracted-chunks', extractedChunks);
           callback();
         });
